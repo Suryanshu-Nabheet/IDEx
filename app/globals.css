@@ -3,111 +3,88 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --radius-lg: 6px;
-  --radius-md: 4px;
-  --radius-sm: 2px;
-
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+  --font-mono: "Geist Mono", "JetBrains Mono", monospace;
+  --color-ide-bg: #000000;
+  --color-ide-border: #1a1a1a;
+  --color-ide-header: #050505;
 }
 
 @layer base {
   :root {
     --background: #000000;
     --foreground: #cccccc;
-    --card: #050505;
-    --card-foreground: #cccccc;
-    --popover: #050505;
-    --popover-foreground: #cccccc;
-    --primary: #ffffff;
-    --primary-foreground: #000000;
-    --secondary: #0a0a0a;
-    --secondary-foreground: #ffffff;
-    --muted: #0a0a0a;
-    --muted-foreground: #666666;
-    --accent: #0a0a0a;
-    --accent-foreground: #ffffff;
-    --destructive: #ff3333;
-    --destructive-foreground: #ffffff;
-    --border: #1a1a1a;
-    --input: #1a1a1a;
-    --ring: #333333;
-
-    --sidebar: #000000;
-    --sidebar-foreground: #888888;
-    --sidebar-primary: #ffffff;
-    --sidebar-primary-foreground: #000000;
-    --sidebar-accent: #0a0a0a;
-    --sidebar-accent-foreground: #ffffff;
-    --sidebar-border: #1a1a1a;
-    --sidebar-ring: #333333;
+     /* Core Borders */
+    --border-primary: #1a1a1a;
+    --border-secondary: #222222;
   }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: var(--border-primary);
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--background);
+    color: var(--foreground);
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
+    overflow: hidden; /* Prevent body scroll */
+    height: 100vh;
+    width: 100vw;
   }
 }
 
-/* Professional Minimalist Scrollbar */
+/* 
+   CRITICAL: CSS Grid Layouts for guaranteed strict sizing 
+   This replaces fragile Flexbox chains for the main layout 
+*/
+
+.ide-grid-layout {
+  display: grid;
+  height: 100vh;
+  width: 100vw;
+  grid-template-rows: auto 1fr auto; /* Header, Main, Footer */
+  overflow: hidden;
+}
+
+.ide-main-grid {
+  display: grid;
+  grid-template-columns: 20% 50% 30%; /* 20% Sidebar, 50% Editor, 30% Runtime */
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.ide-panel-grid {
+  display: grid;
+  grid-template-rows: auto auto 1fr; /* Tabs, Breadcrumbs, Editor */
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Editor Specific Overrides */
+.cm-editor {
+  height: 100% !important;
+}
+
+.cm-scroller {
+  overflow: auto !important;
+  height: 100% !important;
+}
+
+/* Scrollbars */
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
-}
-
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
 }

@@ -10,6 +10,11 @@ import {
   FileJson,
   FileType2,
   FileText,
+  FileBox,
+  Binary,
+  Cpu,
+  Braces,
+  Hash,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -42,11 +47,28 @@ export const getFileIcon = (fileName: string, className?: string) => {
     case "json":
       return <FileJson className={cn("h-4 w-4 text-[#cbcb41]", className)} />;
     case "css":
+    case "scss":
       return <FileType2 className={cn("h-4 w-4 text-[#563d7c]", className)} />;
     case "html":
       return <FileType2 className={cn("h-4 w-4 text-[#e34c26]", className)} />;
+    case "md":
+    case "markdown":
+      return <FileText className={cn("h-4 w-4 text-[#42b883]", className)} />;
+    case "rs":
+      return <FileBox className={cn("h-4 w-4 text-[#dea584]", className)} />;
+    case "py":
+      return <Binary className={cn("h-4 w-4 text-[#3776ab]", className)} />;
+    case "java":
+      return <Cpu className={cn("h-4 w-4 text-[#007396]", className)} />;
+    case "cpp":
+    case "c":
+    case "h":
+    case "hpp":
+      return <Braces className={cn("h-4 w-4 text-[#00599c]", className)} />;
+    case "php":
+      return <Hash className={cn("h-4 w-4 text-[#777bb4]", className)} />;
     default:
-      return <FileIcon className={cn("h-4 w-4 text-[#858585]", className)} />;
+      return <FileIcon className={cn("h-4 w-4 text-[#666]", className)} />;
   }
 };
 
@@ -115,30 +137,30 @@ export function Folder({ id, name, children, className }: FolderProps) {
     <div className={cn("flex flex-col", className)}>
       <button
         onClick={() => onToggleExpand(id)}
-        className="flex items-center gap-1.5 px-3 py-1 transition-colors hover:bg-white/5 text-[12px] group w-full text-left"
+        className="flex items-center gap-2 px-3 py-1.5 transition-colors hover:bg-white/5 text-[12px] group w-full text-left"
       >
         <ChevronRight
           className={cn(
-            "h-3.5 w-3.5 transition-transform text-[#444] group-hover:text-white",
+            "h-3.5 w-3.5 transition-transform text-[#333] group-hover:text-[#666]",
             isExpanded && "rotate-90",
           )}
         />
         {isExpanded ? (
-          <FolderOpenIcon className="h-4 w-4 text-[#3178c6]" />
+          <FolderOpenIcon className="h-4 w-4 text-[#444] group-hover:text-white transition-colors" />
         ) : (
-          <FolderIcon className="h-4 w-4 text-[#3178c6]" />
+          <FolderIcon className="h-4 w-4 text-[#444] group-hover:text-white transition-colors" />
         )}
         <span
           className={cn(
-            "truncate",
-            isExpanded ? "text-white" : "text-[#999] group-hover:text-white",
+            "truncate font-medium transition-colors",
+            isExpanded ? "text-white" : "text-[#777] group-hover:text-white",
           )}
         >
           {name}
         </span>
       </button>
       {isExpanded && (
-        <div className="flex flex-col pl-4 border-l border-[#111]">
+        <div className="flex flex-col pl-4 border-l border-[#111] overflow-hidden">
           {children}
         </div>
       )}
@@ -160,14 +182,14 @@ export function File({ id, name, className }: FileProps) {
     <button
       onClick={() => onSelect(id)}
       className={cn(
-        "flex items-center gap-1.5 px-3 py-1 transition-all text-[12px] group w-full text-left pl-[22px]",
+        "flex items-center gap-2 px-3 py-1.5 transition-all text-[12px] group w-full text-left pl-[26px]",
         isSelected
           ? "bg-white/10 text-white"
-          : "text-[#999] hover:bg-white/5 hover:text-white",
+          : "text-[#777] hover:bg-white/5 hover:text-white",
       )}
     >
       {getFileIcon(name)}
-      <span className="truncate">{name}</span>
+      <span className="truncate font-medium">{name}</span>
     </button>
   );
 }

@@ -44,7 +44,6 @@ export function Terminal({ instance, className }: TerminalProps) {
     terminal.loadAddon(fitAddon);
     terminal.open(terminalRef.current);
 
-    // Ensure fit on settle
     setTimeout(() => fitAddon.fit(), 100);
 
     xtermRef.current = terminal;
@@ -52,10 +51,16 @@ export function Terminal({ instance, className }: TerminalProps) {
     let shellProcess: any;
 
     async function startShell() {
+      // Diagnostic sequence for professional look
+      terminal.writeln("\x1b[1;32mIDEx Engineering Core v1.2\x1b[0m");
+      terminal.writeln(
+        "\x1b[2mSynchronizing with local runtime host...\x1b[0m",
+      );
+
       shellProcess = await instance!.spawn("jsh", {
         terminal: { cols: terminal.cols, rows: terminal.rows },
         env: {
-          PS1: "\u001b[1;32mIDEx \u001b[1;34m$ \u001b[0m",
+          PS1: "\x1b[1;32mIDEx \x1b[1;34m$ \x1b[0m",
         },
       });
 
@@ -75,7 +80,6 @@ export function Terminal({ instance, className }: TerminalProps) {
         shellProcess.resize({ cols: size.cols, rows: size.rows });
       });
 
-      // Ensure prompt set
       input.write('export PS1="IDEx $ "\n');
       input.write("clear\n");
     }
@@ -85,9 +89,7 @@ export function Terminal({ instance, className }: TerminalProps) {
     const handleResize = () => {
       try {
         fitAddon.fit();
-      } catch (e) {
-        console.warn("Terminal fit failed", e);
-      }
+      } catch (e) {}
     };
     window.addEventListener("resize", handleResize);
 
