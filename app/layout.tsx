@@ -13,9 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "IDEx — Premium Web IDE",
-  description:
-    "A real-time, professional, browser-based IDE powered by WebContainers.",
+  title: "IDEx — Web IDE",
+  description: "A real-time, browser-based IDE powered by WebContainers.",
 };
 
 export default function RootLayout({

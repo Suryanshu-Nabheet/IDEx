@@ -17,34 +17,51 @@ export function useWebContainer() {
   const isBooting = useRef(false);
 
   useEffect(() => {
+    let mounted = true;
+
     async function boot() {
-      if (status !== "idle" || isBooting.current) return;
+      // Check global state first to avoid redundant booting
+      if (status === "ready" || isBooting.current) return;
 
       isBooting.current = true;
       setStatus("booting");
 
       try {
         const wc = await getWebContainer();
+        if (!mounted) return;
+
         setInstance(wc);
         setStatus("ready");
 
-        // Attach server-ready listener
+        // Attach server-ready listener only once
+        // Note: webcontainer listeners might be additive, so we should be careful.
+        // For this singleton pattern, it's safer to attach listeners in the component
+        // OR check if we've already attached.
+        // A simple way is to just set it here.
         wc.on("server-ready", (port, url) => {
-          console.log(`[WebContainer] Server ready at port ${port}: ${url}`);
-          setPreviewUrl(url);
+          if (mounted) {
+            console.log(`[WebContainer] Server ready at port ${port}: ${url}`);
+            setPreviewUrl(url);
+          }
         });
 
         console.log("[WebContainer] Engine initialized successfully.");
       } catch (err) {
-        console.error("[WebContainer] Initialization failed:", err);
-        setStatus("error");
+        if (mounted) {
+          console.error("[WebContainer] Initialization failed:", err);
+          setStatus("error");
+        }
       } finally {
         isBooting.current = false;
       }
     }
 
     boot();
-  }, [status]);
+
+    return () => {
+      mounted = false;
+    };
+  }, []); // Empty dependency array to run once on mount (or singleton check handles rest)
 
   // --- Filesystem Actions ---
 
