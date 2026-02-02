@@ -21,69 +21,150 @@ export default function IDEPage() {
     useState<SidebarTab>("explorer");
 
   // --- Filesystem Logic ---
+  // 1. Loader
   const refreshFs = useCallback(async () => {
     if (!instance) return;
 
     const loadDir = async (path: string): Promise<FSTreeNode[]> => {
-      const items = await instance.fs.readdir(path, { withFileTypes: true });
-      const sorted = items.sort((a, b) => {
-        if (a.isDirectory() && !b.isDirectory()) return -1;
-        if (!a.isDirectory() && b.isDirectory()) return 1;
-        return a.name.localeCompare(b.name);
-      });
+      try {
+        const items = await instance.fs.readdir(path, { withFileTypes: true });
+        const sorted = items.sort((a, b) => {
+          if (a.isDirectory() && !b.isDirectory()) return -1;
+          if (!a.isDirectory() && b.isDirectory()) return 1;
+          return a.name.localeCompare(b.name);
+        });
 
-      return await Promise.all(
-        sorted.map(async (item) => {
-          const fullPath = path ? `${path}/${item.name}` : item.name;
-          if (item.isDirectory()) {
+        return await Promise.all(
+          sorted.map(async (item) => {
+            const fullPath = path ? `${path}/${item.name}` : item.name;
+            if (item.isDirectory()) {
+              return {
+                id: fullPath,
+                name: item.name,
+                type: "folder",
+                children: await loadDir(fullPath),
+              };
+            }
             return {
               id: fullPath,
               name: item.name,
-              type: "folder",
-              children: await loadDir(fullPath),
+              type: "file",
             };
-          }
-          return {
-            id: fullPath,
-            name: item.name,
-            type: "file",
-          };
-        }),
-      );
+          }),
+        );
+      } catch (error) {
+        console.warn("Failed to read dir", path, error);
+        return [];
+      }
     };
 
     const tree = await loadDir("");
     setFsTree(tree);
   }, [instance]);
 
+  // 2. Watcher - The Key to "End-to-End Perfect" Sync
   useEffect(() => {
-    if (status === "ready") {
-      void refreshFs();
+    if (status !== "ready" || !instance) return;
+
+    // Initial Load
+    void refreshFs();
+
+    // Setup Watcher
+    let watcher: any; // FSWatcher type is not exported by WebContainer API directly
+
+    try {
+      watcher = instance.fs.watch(
+        ".",
+        { recursive: true },
+        (event: any, filename: any) => {
+          console.log(`[FS Event] ${event}: ${filename}`);
+          // Update FS Tree
+          void refreshFs();
+        },
+      );
+    } catch (e) {
+      console.error("Failed to start FS watcher", e);
     }
-  }, [status, refreshFs]);
+
+    return () => {
+      if (watcher && typeof watcher.close === "function") {
+        watcher.close();
+      }
+    };
+  }, [status, instance, refreshFs]);
+
+  // 3. Auto-Close Deleted Files
+  // Every time fsTree updates, verify if open files still exist
+  useEffect(() => {
+    const verifyOpenFiles = async () => {
+      if (!instance) return;
+      const pathsToCheck = Object.keys(openFiles);
+      const newOpenFiles = { ...openFiles };
+      let hasChanges = false;
+
+      for (const path of pathsToCheck) {
+        try {
+          // Fallback: Use readFile to check existence since stat is not in types
+          await instance.fs.readFile(path);
+        } catch {
+          delete newOpenFiles[path];
+          hasChanges = true;
+        }
+      }
+
+      if (hasChanges) {
+        setOpenFiles(newOpenFiles);
+        // If active file was deleted, switch active
+        if (activeFilePath && !newOpenFiles[activeFilePath]) {
+          const remaining = Object.keys(newOpenFiles);
+          setActiveFilePath(remaining[remaining.length - 1] || null);
+        }
+      }
+    };
+
+    // Run this check when fsTree changes (meaning FS changed)
+    if (instance) {
+      void verifyOpenFiles();
+    }
+  }, [fsTree, instance, openFiles, activeFilePath]);
 
   const handleFileSelect = useCallback(
     async (path: string) => {
+      // Check if it's a folder: Try to read it as specific dir
+      // If readdir succeeds, it is a directory => return.
+      try {
+        await instance?.fs.readdir(path);
+        // If we are here, it IS a directory.
+        return;
+      } catch (error: any) {
+        // If error is NOT "path is not a directory", then maybe it doesn't exist or is a file.
+        // We assume if it fails to readdir, it might be a file we can open.
+      }
+
       if (openFiles[path]) {
         setActiveFilePath(path);
         return;
       }
 
-      const content = (await readFile(path)) || "";
-      const ext = path.split(".").pop() || "";
+      try {
+        const content = (await readFile(path)) || "";
+        const ext = path.split(".").pop() || "";
 
-      setOpenFiles((prev) => ({
-        ...prev,
-        [path]: {
-          path,
-          content,
-          savedContent: content,
-          language: ext,
-        },
-      }));
-      setActiveFilePath(path);
+        setOpenFiles((prev) => ({
+          ...prev,
+          [path]: {
+            path,
+            content,
+            savedContent: content,
+            language: ext,
+          },
+        }));
+        setActiveFilePath(path);
+      } catch (e) {
+        console.error("Failed to open file", path, e);
+      }
     },
-    [openFiles, readFile],
+    [openFiles, readFile, instance],
   );
 
   const handleContentChange = useCallback(
@@ -111,8 +192,8 @@ export default function IDEPage() {
         savedContent: content,
       },
     }));
-    void refreshFs();
-  }, [activeFilePath, openFiles, writeFile, refreshFs]);
+    // Watcher will pick this up
+  }, [activeFilePath, openFiles, writeFile]);
 
   const handleCloseFile = (path: string) => {
     const newOpenFiles = { ...openFiles };
@@ -143,18 +224,26 @@ export default function IDEPage() {
   };
 
   const handleNewFile = async () => {
-    const name = prompt("Enter File Path:");
+    const name = prompt("Enter File Path (e.g., 'src/main.ts'):");
     if (name) {
+      // Ensure parent dirs exist
+      const parts = name.split("/");
+      if (parts.length > 1) {
+        const dir = parts.slice(0, -1).join("/");
+        try {
+          await instance?.fs.mkdir(dir, { recursive: true });
+        } catch {} // Ignore if exists
+      }
       await instance?.fs.writeFile(name, "");
-      void refreshFs();
+      // Watcher updates tree
     }
   };
 
   const handleNewFolder = async () => {
-    const name = prompt("Enter Folder Path:");
+    const name = prompt("Enter Folder Path (e.g., 'components/ui'):");
     if (name) {
-      await instance?.fs.mkdir(name);
-      void refreshFs();
+      await instance?.fs.mkdir(name, { recursive: true });
+      // Watcher updates tree
     }
   };
 

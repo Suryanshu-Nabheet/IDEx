@@ -1,8 +1,8 @@
-# IDEx — Professional Web-Based IDE
+# IDEx — Web-Based IDE
 
 IDEx is a high-performance, browser-based Integrated Development Environment (IDE) powered by **WebContainers**. It provides a complete Node.js environment directly in your browser, enabling you to build, run, and deploy web applications without local setup.
 
-## 🚀 Key Features
+## Key Features
 
 - **Real-Time Node.js Runtime**: Full WebContainer integration for running scripts, installing dependencies, and starting servers.
 - **Advanced Code Editor**: Powered by **CodeMirror 6** with multi-language syntax highlighting, bracket matching, and intelligent auto-completion.
@@ -15,7 +15,7 @@ IDEx is a high-performance, browser-based Integrated Development Environment (ID
   - Export workspace as a signed ZIP archive.
 - **Premium Aesthetics**: A custom-crafted dark theme optimized for long coding sessions with high-visibility borders and refined typography.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Framework**: Next.js 15+ (App Router)
 - **Language**: TypeScript (Strict Mode)
@@ -23,7 +23,7 @@ IDEx is a high-performance, browser-based Integrated Development Environment (ID
 - **Runtime**: @webcontainer/api
 - **Core Components**: CodeMirror 6, XTerm.js, Lucide Icons, JSZip
 
-## 🏁 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -52,10 +52,10 @@ IDEx is a high-performance, browser-based Integrated Development Environment (ID
 
 4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-**Developed with ❤️ by Suryanshu Nabheet**
+**Developed by Suryanshu Nabheet**
